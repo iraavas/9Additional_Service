@@ -4,13 +4,19 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import ru.hpclab.hl.module1.service.cache.DoctorCache;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 @Service
 public class CacheStatisticsService {
 
-    // Печать каждые 10 секунд (можно изменить на нужный интервал)
+    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+    // Печать каждые 10 секунд
     @Scheduled(fixedRate = 10000)
     public void printCacheStats() {
         int size = DoctorCache.size();
-        System.out.println("[CACHE] Doctor cache size: " + size);
+        String timestamp = LocalDateTime.now().format(formatter);
+        System.out.println("[CACHE] " + timestamp + " — Doctor cache size: " + size);
     }
 }

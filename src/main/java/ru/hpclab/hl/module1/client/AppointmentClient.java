@@ -6,6 +6,7 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import ru.hpclab.hl.module1.dto.AppointmentDTO;
+import ru.hpclab.hl.module1.service.statistics.ObservabilityService;
 
 import java.util.List;
 
@@ -13,6 +14,7 @@ import java.util.List;
 public class AppointmentClient {
 
     private final RestTemplate restTemplate;
+    private final ObservabilityService observabilityService;
 
     @Value("${main.service.host}")
     private String mainServiceHost;
@@ -20,20 +22,26 @@ public class AppointmentClient {
     @Value("${main.service.port}")
     private String mainServicePort;
 
-    public AppointmentClient(RestTemplate restTemplate) {
+    public AppointmentClient(RestTemplate restTemplate, ObservabilityService observabilityService) {
         this.restTemplate = restTemplate;
+        this.observabilityService = observabilityService;
     }
 
     public List<AppointmentDTO> getAppointments() {
-        String url = "http://" + mainServiceHost + ":" + mainServicePort + "/appointments";
+        observabilityService.start("appointmentClient.getAll");
+        try {
+            String url = "http://" + mainServiceHost + ":" + mainServicePort + "/appointments";
 
-        ResponseEntity<List<AppointmentDTO>> response = restTemplate.exchange(
-                url,
-                HttpMethod.GET,
-                null,
-                new ParameterizedTypeReference<>() {}
-        );
+            ResponseEntity<List<AppointmentDTO>> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    null,
+                    new ParameterizedTypeReference<>() {}
+            );
 
-        return response.getBody();
+            return response.getBody();
+        } finally {
+            observabilityService.stop("appointmentClient.getAll");
+        }
     }
 }

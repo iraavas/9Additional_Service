@@ -4,6 +4,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
 import ru.hpclab.hl.module1.dto.DoctorDTO;
 import ru.hpclab.hl.module1.service.AppointmentAvailabilityService;
+import ru.hpclab.hl.module1.service.statistics.ObservabilityService;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -13,9 +14,14 @@ import java.util.List;
 public class AppointmentAvailabilityController {
 
     private final AppointmentAvailabilityService service;
+    private final ObservabilityService observabilityService;
 
-    public AppointmentAvailabilityController(AppointmentAvailabilityService service) {
+    public AppointmentAvailabilityController(
+            AppointmentAvailabilityService service,
+            ObservabilityService observabilityService
+    ) {
         this.service = service;
+        this.observabilityService = observabilityService;
     }
 
     @GetMapping("/check")
@@ -23,6 +29,12 @@ public class AppointmentAvailabilityController {
             @RequestParam String specialization,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
     ) {
-        return service.getAvailableDoctors(specialization, date);
+        observabilityService.start("controller.availability.check");
+
+        List<DoctorDTO> result = service.getAvailableDoctors(specialization, date);
+
+        observabilityService.stop("controller.availability.check");
+
+        return result;
     }
 }

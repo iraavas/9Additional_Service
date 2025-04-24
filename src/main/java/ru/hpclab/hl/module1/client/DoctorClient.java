@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import ru.hpclab.hl.module1.dto.DoctorDTO;
 import ru.hpclab.hl.module1.service.cache.DoctorCache;
+import ru.hpclab.hl.module1.service.statistics.ObservabilityService;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -15,6 +16,7 @@ import java.util.stream.Collectors;
 public class DoctorClient {
 
     private final RestTemplate restTemplate;
+    private final ObservabilityService observabilityService;
 
     @Value("${main.service.host}")
     private String mainServiceHost;
@@ -22,40 +24,43 @@ public class DoctorClient {
     @Value("${main.service.port}")
     private String mainServicePort;
 
-    public DoctorClient(RestTemplate restTemplate) {
+    public DoctorClient(RestTemplate restTemplate, ObservabilityService observabilityService) {
         this.restTemplate = restTemplate;
+        this.observabilityService = observabilityService;
     }
 
     public List<DoctorDTO> getDoctorsBySpecialization(String specialization) {
-        String url = "http://" + mainServiceHost + ":" + mainServicePort + "/doctors";
+        observabilityService.start("doctorClient.getBySpecialization");
+        try {
+            String url = "http://" + mainServiceHost + ":" + mainServicePort + "/doctors";
+            ResponseEntity<List<DoctorDTO>> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    null,
+                    new ParameterizedTypeReference<>() {}
+            );
 
-        ResponseEntity<List<DoctorDTO>> response = restTemplate.exchange(
-                url,
-                HttpMethod.GET,
-                null,
-                new ParameterizedTypeReference<>() {}
-        );
+            List<DoctorDTO> allDoctors = response.getBody();
 
-        List<DoctorDTO> allDoctors = response.getBody();
-
-        // Кешируем всех полученных врачей
-        allDoctors.forEach(DoctorCache::put);
-
-        return allDoctors.stream()
-                .filter(d -> d.getSpecialization().equalsIgnoreCase(specialization))
-                .collect(Collectors.toList());
+            return allDoctors.stream()
+                    .filter(d -> d.getSpecialization().equalsIgnoreCase(specialization))
+                    .collect(Collectors.toList());
+        } finally {
+            observabilityService.stop("doctorClient.getBySpecialization");
+        }
     }
 
     public DoctorDTO getDoctorById(Long id) {
-        // Сначала проверяем кеш
-        return DoctorCache.get(id).orElseGet(() -> {
-            // Если нет в кеше — делаем запрос
-            String url = "http://" + mainServiceHost + ":" + mainServicePort + "/doctors/" + id;
-            DoctorDTO doctor = restTemplate.getForObject(url, DoctorDTO.class);
-
-            // Сохраняем в кеш и возвращаем
-            DoctorCache.put(doctor);
-            return doctor;
-        });
+        observabilityService.start("doctorClient.getById");
+        try {
+            return DoctorCache.get(id).orElseGet(() -> {
+                String url = "http://" + mainServiceHost + ":" + mainServicePort + "/doctors/" + id;
+                DoctorDTO doctor = restTemplate.getForObject(url, DoctorDTO.class);
+                DoctorCache.put(doctor);
+                return doctor;
+            });
+        } finally {
+            observabilityService.stop("doctorClient.getById");
+        }
     }
 }

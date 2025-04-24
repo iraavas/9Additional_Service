@@ -11,7 +11,10 @@ public class DoctorCache {
     private static final Map<Long, DoctorDTO> cache = new HashMap<>();
 
     public static Optional<DoctorDTO> get(Long id) {
-        return Optional.ofNullable(cache.get(id));
+        DoctorDTO result = cache.get(id);
+        String timestamp = java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        System.out.println("[CACHE] " + timestamp + " get(" + id + ") => " + (result == null ? "MISS" : "HIT"));
+        return Optional.ofNullable(result);
     }
 
     public static void put(DoctorDTO doctor) {
