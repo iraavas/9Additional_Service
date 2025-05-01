@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication
-@EnableScheduling  // Включаем поддержку планировщика задач
+@EnableScheduling
 public class AdditionalServiceApplication {
     public static void main(String[] args) {
         SpringApplication.run(AdditionalServiceApplication.class, args);

@@ -1,5 +1,6 @@
 package ru.hpclab.hl.module1.client;
 
+import io.github.resilience4j.retry.annotation.Retry;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
@@ -29,6 +30,7 @@ public class DoctorClient {
         this.observabilityService = observabilityService;
     }
 
+    @Retry(name = "MAIN_SERVICE")
     public List<DoctorDTO> getDoctorsBySpecialization(String specialization) {
         observabilityService.start("doctorClient.getBySpecialization");
         try {
@@ -50,6 +52,7 @@ public class DoctorClient {
         }
     }
 
+    @Retry(name = "MAIN_SERVICE")
     public DoctorDTO getDoctorById(Long id) {
         observabilityService.start("doctorClient.getById");
         try {

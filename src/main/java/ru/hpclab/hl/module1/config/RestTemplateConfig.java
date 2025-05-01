@@ -11,8 +11,8 @@ public class RestTemplateConfig {
     @Bean
     public RestTemplate restTemplate() {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(120000); // таймаут установки соединения: 60 секунд
-        factory.setReadTimeout(120000);    // таймаут ожидания ответа: 60 секунд
+        factory.setConnectTimeout(120000);
+        factory.setReadTimeout(120000);
 
         return new RestTemplate(factory);
     }

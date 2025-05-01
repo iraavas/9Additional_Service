@@ -1,5 +1,6 @@
 package ru.hpclab.hl.module1.client;
 
+import io.github.resilience4j.retry.annotation.Retry;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
@@ -27,6 +28,7 @@ public class AppointmentClient {
         this.observabilityService = observabilityService;
     }
 
+    @Retry(name = "MAIN_SERVICE")
     public List<AppointmentDTO> getAppointments() {
         observabilityService.start("appointmentClient.getAll");
         try {
