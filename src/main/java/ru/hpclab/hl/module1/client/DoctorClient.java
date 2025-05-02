@@ -2,11 +2,12 @@ package ru.hpclab.hl.module1.client;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.*;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import ru.hpclab.hl.module1.dto.DoctorDTO;
-import ru.hpclab.hl.module1.service.cache.DoctorCache;
+import ru.hpclab.hl.module1.service.cache.DoctorRedisCache;
 import ru.hpclab.hl.module1.service.statistics.ObservabilityService;
 
 import java.util.List;
@@ -24,9 +25,12 @@ public class DoctorClient {
     @Value("${main.service.port}")
     private String mainServicePort;
 
-    public DoctorClient(RestTemplate restTemplate, ObservabilityService observabilityService) {
+    private final DoctorRedisCache doctorRedisCache;
+
+    public DoctorClient(RestTemplate restTemplate, ObservabilityService observabilityService, DoctorRedisCache doctorRedisCache) {
         this.restTemplate = restTemplate;
         this.observabilityService = observabilityService;
+        this.doctorRedisCache = doctorRedisCache;
     }
 
     public List<DoctorDTO> getDoctorsBySpecialization(String specialization) {
@@ -53,10 +57,10 @@ public class DoctorClient {
     public DoctorDTO getDoctorById(Long id) {
         observabilityService.start("doctorClient.getById");
         try {
-            return DoctorCache.get(id).orElseGet(() -> {
+            return doctorRedisCache.get(id).orElseGet(() -> {
                 String url = "http://" + mainServiceHost + ":" + mainServicePort + "/doctors/" + id;
                 DoctorDTO doctor = restTemplate.getForObject(url, DoctorDTO.class);
-                DoctorCache.put(doctor);
+                doctorRedisCache.put(doctor);
                 return doctor;
             });
         } finally {
